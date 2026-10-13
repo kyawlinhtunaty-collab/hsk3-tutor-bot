@@ -1,0 +1,27 @@
+name: Daily HSK 3 Telegram Tutor
+
+on:
+  schedule:
+    # 01:30 UTC = 08:00 Myanmar Time (UTC+06:30)
+    - cron: '30 1 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  send-daily-lesson:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out course
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Send lesson to Telegram
+        env:
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+          CHAT_ID: ${{ secrets.CHAT_ID }}
+          START_DATE: '2026-10-14'
+        run: python main.py
