@@ -9,7 +9,6 @@ import os
 import sys
 import time
 import urllib.error
-import urllib.parse
 import urllib.request
 from pathlib import Path
 from zoneinfo import ZoneInfo
@@ -29,18 +28,18 @@ def chunks_for_segments(title: str, segments: list[str], footer: str = '') -> li
     messages: list[str] = []
     current = header
     for segment in segments:
-        candidate = current + '<br/><br/>' + segment
+        candidate = current + '\n\n' + segment
         if len(candidate) > TELEGRAM_MAX_SAFE and current != header:
             messages.append(current)
-            current = header + '<br/><br/>' + segment
+            current = header + '\n\n' + segment
         else:
             current = candidate
     if footer:
-        if len(current) + len(footer) + 12 <= TELEGRAM_MAX_SAFE:
-            current += '<br/><br/>' + footer
+        if len(current) + len(footer) + 2 <= TELEGRAM_MAX_SAFE:
+            current += '\n\n' + footer
         else:
             messages.append(current)
-            current = header + '<br/><br/>' + footer
+            current = header + '\n\n' + footer
     if current != header:
         messages.append(current)
     return messages or [header]
@@ -53,20 +52,19 @@ def render_lesson(lesson: dict) -> list[str]:
     if lesson.get('grammar_note'):
         segments.append('<b>Grammar:</b> ' + esc(lesson['grammar_note']))
 
-    words = lesson.get('vocabulary') or []
-    for i, item in enumerate(words, 1):
+    for i, item in enumerate(lesson.get('vocabulary') or [], 1):
         audio = item.get('audio_url')
         audio_line = f'<a href="{esc(audio)}">Audio</a>' if audio else 'Audio: not available'
         segments.append(
             f'<b>{i}. {esc(item.get("word"))} ({esc(item.get("pinyin"))})</b> — {esc(item.get("burmese"))}'
-            f'<br/><i>{esc(item.get("example_cn"))}</i>'
-            f'<br/>{esc(item.get("example_pinyin"))}'
-            f'<br/>{esc(item.get("example_myanmar"))}'
-            f'<br/>{audio_line}'
+            f'\n<i>{esc(item.get("example_cn"))}</i>'
+            f'\n{esc(item.get("example_pinyin"))}'
+            f'\n{esc(item.get("example_myanmar"))}'
+            f'\n{audio_line}'
         )
 
     if lesson.get('tasks'):
-        segments.append('<b>Practice:</b><br/>' + '<br/>'.join(esc(x) for x in lesson['tasks']))
+        segments.append('<b>Practice:</b>\n' + '\n'.join(esc(x) for x in lesson['tasks']))
     if lesson.get('audio_note'):
         segments.append('<i>' + esc(lesson['audio_note']) + '</i>')
 
@@ -75,8 +73,9 @@ def render_lesson(lesson: dict) -> list[str]:
         footer_parts.append('<b>iBT typing tip:</b> ' + esc(lesson['ibt_typing_tip']))
     if lesson.get('review_task'):
         footer_parts.append('<b>Review:</b> ' + esc(lesson['review_task']))
-    footer = '<br/>'.join(footer_parts)
-    rendered = chunks_for_segments(lesson.get('title', f'Day {lesson.get("day")}'), segments, footer)
+    rendered = chunks_for_segments(
+        lesson.get('title', f'Day {lesson.get("day")}'), segments, '\n'.join(footer_parts)
+    )
 
     # Keep mock answer keys separate so the learner can attempt the questions first.
     if lesson.get('answer_key'):
