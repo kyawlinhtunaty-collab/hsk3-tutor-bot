@@ -48,13 +48,20 @@ def chunks_for_segments(title: str, segments: list[str], footer: str = '') -> li
 def render_lesson(lesson: dict) -> list[str]:
     segments: list[str] = []
     if lesson.get('objective'):
-        segments.append('<b>Goal:</b> ' + esc(lesson['objective']))
+        segments.append('<b>ရည်မှန်းချက်:</b> ' + esc(lesson['objective']))
     if lesson.get('grammar_note'):
-        segments.append('<b>Grammar:</b> ' + esc(lesson['grammar_note']))
+        segments.append('<b>သဒ္ဒါရှင်းလင်းချက်:</b> ' + esc(lesson['grammar_note']))
+    grammar_example = lesson.get('grammar_example') or {}
+    if grammar_example:
+        segments.append(
+            '<b>သဒ္ဒါဥပမာ:</b> <i>' + esc(grammar_example.get('cn')) + '</i>'
+            + '\n' + esc(grammar_example.get('pinyin'))
+            + '\n' + esc(grammar_example.get('myanmar'))
+        )
 
     for i, item in enumerate(lesson.get('vocabulary') or [], 1):
         audio = item.get('audio_url')
-        audio_line = f'<a href="{esc(audio)}">Audio</a>' if audio else 'Audio: not available'
+        audio_line = f'<a href="{esc(audio)}">🔊 အသံထွက်နားထောင်ရန်</a>' if audio else 'အသံထွက်လင့်ခ် မရရှိပါ'
         segments.append(
             f'<b>{i}. {esc(item.get("word"))} ({esc(item.get("pinyin"))})</b> — {esc(item.get("burmese"))}'
             f'\n<i>{esc(item.get("example_cn"))}</i>'
@@ -64,22 +71,22 @@ def render_lesson(lesson: dict) -> list[str]:
         )
 
     if lesson.get('tasks'):
-        segments.append('<b>Practice:</b>\n' + '\n'.join(esc(x) for x in lesson['tasks']))
+        segments.append('<b>လေ့ကျင့်ခန်း:</b>\n' + '\n'.join(esc(x) for x in lesson['tasks']))
     if lesson.get('audio_note'):
         segments.append('<i>' + esc(lesson['audio_note']) + '</i>')
 
     footer_parts = []
     if lesson.get('ibt_typing_tip'):
-        footer_parts.append('<b>iBT typing tip:</b> ' + esc(lesson['ibt_typing_tip']))
+        footer_parts.append('<b>iBT စာရိုက်အကြံပြုချက်:</b> ' + esc(lesson['ibt_typing_tip']))
     if lesson.get('review_task'):
-        footer_parts.append('<b>Review:</b> ' + esc(lesson['review_task']))
+        footer_parts.append('<b>ပြန်လည်သုံးသပ်ရန်:</b> ' + esc(lesson['review_task']))
     rendered = chunks_for_segments(
         lesson.get('title', f'Day {lesson.get("day")}'), segments, '\n'.join(footer_parts)
     )
 
     # Keep mock answer keys separate so the learner can attempt the questions first.
     if lesson.get('answer_key'):
-        key_segments = ['<b>Self-check — reveal after attempting the practice:</b>']
+        key_segments = ['<b>ကိုယ်တိုင်စစ်ဆေးရန် — လေ့ကျင့်ခန်းဖြေပြီးမှ ကြည့်ပါ:</b>']
         key_segments.extend(esc(x) for x in lesson['answer_key'])
         rendered.extend(chunks_for_segments(lesson.get('title', 'Answer key') + ' — Answer key', key_segments))
     return rendered
